@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<script src="http://code.jquery.com/jquery-latest.js"></script>
+		<title></title>
+		<style type="text/css">
+			*{margin: 0;padding: 0;}
+			canvas{background: #333;}
+		</style>
+	</head>
+	<body>
+		<canvas id="canvas"></canvas>
+		<script type="text/javascript">
+			$(document.body).css({
+				'overflow-x':'hidden',
+				'overflow-y':'hidden'
+			})
+			var w,h,c,mouseX,mouseY,rainP=[],ubr=0;
+			c=document.getElementById('canvas').getContext('2d');
+			w=canvas.width=window.innerWidth;
+			h=canvas.height=window.innerHeight;	
+			var lingrad=c.createLinearGradient(0,0,0,h);
+			lingrad.addColorStop(0,'#333');
+			lingrad.addColorStop(1,'#111');
+			c.fillStyle=lingrad;
+			c.fillRect(0,0,canvas.width,canvas.height);
+			c.fill();
+			function getSize(){
+				w=canvas.weight=window.innerWidth;
+				h=canvas.height=window.innerHeight;
+			}
+			rainpoint={
+				vx:1,
+				vy:1,
+				r:5,
+				zu:.99,
+				speed:.25,
+				pnub:250,
+				color:'rgba(240,255,240,0.2)',
+				water:1,
+			}
+			umbrella={
+				x:100,
+				y:100,
+			}
+			function rain(){
+				this.x=~~w*Math.random();
+				this.y=0;
+				this.r=rainpoint.r-parseInt(3*Math.random());
+				this.vx=null;
+				this.vy=rainpoint.vy;
+				this.speed=rainpoint.speed;
+				this.zu=rainpoint.zu;
+				this.down=0;
+				this.color=rainpoint.color;
+				this.rainNew=function(){
+					this.crash();
+					this.vy*=this.zu;
+					this.vy+=this.speed;
+					this.y+=this.vy;
+					this.x+=this.vx;
+					if(ubr){this.ubrCrash()}
+				};
+				this.crash=function(){
+					var waterH=parseInt((Math.sqrt(rainpoint.water)));
+					if(this.y>=h-waterH){
+						this.vy=-parseInt(this.vy*(0.3*Math.random()+0.2));
+						this.r*=.5;
+						this.down++;
+						if(this.down>100){
+							rainP.shift();
+							rainpoint.water++;
+						}
+					}	
+				}
+				this.ubrCrash=function(){
+					if(this.y>=mouseY&&this.y<=mouseY+100){
+						if(mouseX>=this.x&&this.x>=mouseX-200){
+							if(mouseX-this.x-2*this.y+2*mouseY<=0){
+								this.vx=-(-(mouseX-this.x)/40+5.5);this.vy=0;
+								this.y=(mouseX-this.x)/2+mouseY;	
+							}
+						}else if(mouseX<=this.x&&this.x<=mouseX+200){
+							if(this.x-mouseX-2*this.y+2*mouseY<=0){
+								this.vx=-((this.x-mouseX)/40-5.5);this.vy=0;
+								this.y=(this.x-mouseX)/2+mouseY;
+							}
+						}
+					}
+				}
+				this.draw=function(){
+					c.save();
+					c.fillStyle=this.color;
+					c.beginPath();
+					c.arc(this.x,this.y,this.r,0,2*Math.PI,true);
+					c.closePath();
+					c.fill();
+					c.restore();
+				}
+			}
+			function dumbrella(x,y){
+				c.save();c.fillStyle='rgb(30,30,30)';
+				c.strokeStyle='black';
+				c.fillRect(x-7,y-10,14,300);
+				c.fillRect(x-10,y+290,20,50);
+				c.beginPath();
+				c.moveTo(x,y-20);
+				c.lineTo(x-7,y-10);
+				c.lineTo(x+7,y-10);
+				c.closePath();
+				c.fill();
+				c.fillStyle='rgba(0,191,255,.3)';
+				c.beginPath();
+				c.moveTo(x+200,y+100);
+				c.quadraticCurveTo(x,y+150,x-200,y+100);
+				c.quadraticCurveTo(x,y+50,x+200,y+100);
+				c.closePath();
+				c.fill()
+				var lgrd=c.createLinearGradient(x-200,y,x+200,y);
+				lgrd.addColorStop(0,'rgba(0,0,128,.9)');
+				lgrd.addColorStop(.5,'rgba(30,144,255,.9)');
+				lgrd.addColorStop(1,'rgba(0,0,128,.9)');
+				c.fillStyle=lgrd;
+				c.lineWidth=3;
+				c.beginPath();
+				c.moveTo(x-200,y+100);
+				c.lineTo(x,y);
+				c.lineTo(x+200,y+100);
+				c.quadraticCurveTo(x,y+150,x-200,y+100);
+				c.closePath();
+				c.fill();
+				c.restore()
+			}
+			function water(){
+				var waterH=Math.sqrt(rainpoint.water);
+				c.fillStyle='rgba(209,238,238,0.2)'
+				c.beginPath();
+				c.fillRect(0,h-waterH,w,waterH);
+				c.fill();
+			}
+			function loop(){
+				var lingrad=c.createLinearGradient(0,0,0,h);
+				lingrad.addColorStop(0,'rgba(51,51,51,0.3)');
+				lingrad.addColorStop(1,'rgba(200,200,200,0.3)');
+				c.fillStyle=lingrad;
+				c.fillRect(0,0,canvas.width,canvas.height);
+				if(ubr){
+					dumbrella(mouseX,mouseY)
+				}
+				if(rainP.length<rainpoint.pnub){
+					rainP.push(new rain());
+				}
+				var i=rainP.length;
+				while(i--){
+					rainP[i].rainNew();
+					rainP[i].draw();
+				}
+				water();
+				window.requestAnimationFrame(loop);
+			}
+			window.requestAnimationFrame(loop)
+			canvas.addEventListener('mouseup',function(e){ubr=0})
+			canvas.addEventListener('mousedown',function(e){ubr=1;})
+			canvas.addEventListener('mousemove',function(e){
+				mouseX=e.clientX;mouseY=e.clientY-300;
+			})
+		</script>
+	</body>
+</html>
+
+
